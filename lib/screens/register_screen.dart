@@ -20,7 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -40,12 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 85,
-      );
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512, imageQuality: 85);
 
       if (image != null) {
         final bytes = await image.readAsBytes();
@@ -81,23 +76,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     final authProvider = context.read<AuthProvider>();
-    final result = await authProvider.register(RegisterData(
-      firstName: _firstNameController.text,
-      lastName: _lastNameController.text,
-      email: _emailController.text,
-      password: _passwordController.text,
-      photo: _photoBase64,
-    ));
+    final result = await authProvider.register(
+      RegisterData(
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+        photo: _photoBase64,
+      ),
+    );
 
     if (!mounted) return;
 
     if (result['success'] == true) {
       Navigator.pushReplacementNamed(context, '/login');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cadastro realizado com sucesso! Faça login para continuar.'),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text('Cadastro realizado com sucesso! Faça login para continuar.'), backgroundColor: Colors.green),
       );
     } else {
       setState(() {
@@ -117,9 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.all(24),
             child: Card(
               elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 450),
                 padding: const EdgeInsets.all(32),
@@ -132,21 +124,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // Back button
                       Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                          Text(
-                            'Criar Conta',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
+                          IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
+                          Text('Criar Conta', style: Theme.of(context).textTheme.headlineMedium),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Cadastre-se para criar seu próprio portfólio de mídia',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
+                      Text('Cadastre-se para criar seu próprio portfólio de mídia', style: Theme.of(context).textTheme.bodyMedium),
                       const SizedBox(height: 24),
 
                       // Photo upload
@@ -156,23 +139,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: CircleAvatar(
                             radius: 50,
                             backgroundColor: AppTheme.slate700,
-                            backgroundImage: _photoBase64 != null
-                                ? MemoryImage(
-                                    Uri.parse(_photoBase64!).data!.contentAsBytes(),
-                                  )
-                                : null,
-                            child: _photoBase64 == null
-                                ? const Icon(Icons.add_a_photo, size: 32)
-                                : null,
+                            backgroundImage:
+                                _photoBase64 != null
+                                    ? (() {
+                                      try {
+                                        final comma = _photoBase64!.indexOf(',');
+                                        if (comma != -1) {
+                                          final data = _photoBase64!.substring(comma + 1);
+                                          return MemoryImage(base64Decode(data));
+                                        }
+                                      } catch (_) {}
+                                      return null;
+                                    })()
+                                    : null,
+                            child: _photoBase64 == null ? const Icon(Icons.add_a_photo, size: 32) : null,
                           ),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Foto do Perfil (opcional)',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
+                      Text('Foto do Perfil (opcional)', style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
                       const SizedBox(height: 24),
 
                       // Name fields
@@ -198,10 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _lastNameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Sobrenome',
-                                hintText: 'Silva',
-                              ),
+                              decoration: const InputDecoration(labelText: 'Sobrenome', hintText: 'Silva'),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Obrigatório';
@@ -244,11 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           hintText: '••••••••',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
+                            icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
                             onPressed: () {
                               setState(() {
                                 _obscurePassword = !_obscurePassword;
@@ -274,11 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           hintText: '••••••••',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
+                            icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
                             onPressed: () {
                               setState(() {
                                 _obscureConfirmPassword = !_obscureConfirmPassword;
@@ -305,31 +279,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppTheme.red400),
                           ),
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(color: AppTheme.red400),
-                            textAlign: TextAlign.center,
-                          ),
+                          child: Text(_errorMessage!, style: TextStyle(color: AppTheme.red400), textAlign: TextAlign.center),
                         ),
 
                       // Register button
                       ElevatedButton(
                         onPressed: _isLoading ? null : _handleRegister,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : const Text('Criar Conta'),
+                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                                )
+                                : const Text('Criar Conta'),
                       ),
                       const SizedBox(height: 16),
 
@@ -337,10 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            'Já tem uma conta? ',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
+                          Text('Já tem uma conta? ', style: Theme.of(context).textTheme.bodyMedium),
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context);

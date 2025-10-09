@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:convert';
 import '../models/media_item_model.dart';
 
 class MediaFormDialog extends StatefulWidget {
@@ -112,6 +116,42 @@ class _MediaFormDialogState extends State<MediaFormDialog> {
     }
   }
 
+  Future<void> _pickLocalFile() async {
+    try {
+      debugPrint('Abrindo FilePicker...');
+      final result = await FilePicker.platform.pickFiles(type: FileType.image, allowMultiple: false, withData: true);
+      debugPrint('FilePicker result: $result');
+      if (result != null && result.files.isNotEmpty) {
+        final picked = result.files.single;
+        // On web and some platforms `path` can be null. Use bytes -> data URI as fallback.
+        if (picked.path != null && picked.path!.isNotEmpty) {
+          setState(() {
+            _imageController.text = picked.path!;
+          });
+        } else if (picked.bytes != null) {
+          final bytes = picked.bytes!;
+          final base64Data = base64Encode(bytes);
+          final mime = picked.extension != null ? 'image/${picked.extension}' : 'image/jpeg';
+          final dataUri = 'data:$mime;base64,$base64Data';
+          setState(() {
+            _imageController.text = dataUri;
+          });
+        }
+      } else {
+        // User cancelled or no file selected
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nenhum arquivo selecionado')));
+        }
+      }
+    } catch (e, st) {
+      debugPrint('Erro ao selecionar arquivo: $e');
+      debugPrint('$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao selecionar arquivo: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.media != null;
@@ -130,7 +170,7 @@ class _MediaFormDialogState extends State<MediaFormDialog> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
                 ),
                 child: Row(
@@ -431,25 +471,33 @@ class _MediaFormDialogState extends State<MediaFormDialog> {
       children: [
         Text('Capa', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: _imageController,
-          decoration: InputDecoration(
-            hintText: 'URL ou caminho da imagem',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            filled: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-          maxLines: 2,
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'URL da imagem é obrigatória';
-            }
-            return null;
-          },
-          onChanged: (value) {
-            // Force rebuild to show/hide preview
-            setState(() {});
-          },
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _imageController,
+                decoration: InputDecoration(
+                  hintText: 'URL ou caminho da imagem',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+                maxLines: 2,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'URL da imagem é obrigatória';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  // Force rebuild to show/hide preview
+                  setState(() {});
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(onPressed: _pickLocalFile, icon: const Icon(Icons.upload_file), label: const Text('Selecionar arquivo')),
+          ],
         ),
         if (_imageController.text.isNotEmpty) ...[
           const SizedBox(height: 12),
@@ -458,32 +506,66 @@ class _MediaFormDialogState extends State<MediaFormDialog> {
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Theme.of(context).dividerColor)),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                _imageController.text,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.broken_image_outlined, size: 48, color: Theme.of(context).colorScheme.error),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Imagem não encontrada',
-                            style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+              child: Builder(
+                builder: (context) {
+                  final text = _imageController.text;
+                  // Data URI (base64)
+                  if (text.startsWith('data:')) {
+                    try {
+                      final comma = text.indexOf(',');
+                      if (comma != -1) {
+                        final data = text.substring(comma + 1);
+                        final bytes = base64Decode(data);
+                        return Image.memory(
+                          bytes,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => _buildImageError(context),
+                        );
+                      }
+                    } catch (_) {
+                      return _buildImageError(context);
+                    }
+                  }
+
+                  // Try local file path (only on non-web platforms)
+                  if (!kIsWeb) {
+                    try {
+                      final file = File(text);
+                      if (file.existsSync()) {
+                        return Image.file(file, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildImageError(context));
+                      }
+                    } catch (_) {}
+                  }
+
+                  // Try asset
+                  try {
+                    return Image.asset(text, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildImageError(context));
+                  } catch (_) {}
+
+                  // Fallback to network
+                  return Image.network(text, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildImageError(context));
                 },
               ),
             ),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildImageError(BuildContext context) {
+    return Container(
+      color: Theme.of(context).colorScheme.errorContainer,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.broken_image_outlined, size: 48, color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 8),
+            Text('Imagem não encontrada', style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
     );
   }
 }

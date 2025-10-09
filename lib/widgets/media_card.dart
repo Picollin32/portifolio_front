@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/media_item_model.dart';
 
@@ -109,12 +110,16 @@ class MediaCard extends StatelessWidget {
   Widget _buildImage() {
     // Check if it's a local file path (starts with 'data:' for base64 or '/' for file path)
     if (item.image.startsWith('data:')) {
-      // Handle base64 images (from image picker)
-      return Image.memory(
-        Uri.parse(item.image).data!.contentAsBytes(),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-      );
+      // Handle base64 images (from image picker) safely
+      try {
+        final comma = item.image.indexOf(',');
+        if (comma != -1) {
+          final data = item.image.substring(comma + 1);
+          final bytes = base64Decode(data);
+          return Image.memory(bytes, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholder());
+        }
+      } catch (_) {}
+      return _buildPlaceholder();
     } else if (item.image.startsWith('/') || item.image.contains('\\')) {
       // Handle file system paths
       return Image.file(File(item.image), fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholder());

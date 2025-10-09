@@ -16,6 +16,7 @@ class _AdminScreenState extends State<AdminScreen> {
   List<User> _users = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  String _roleFilter = 'all'; // values: 'all', 'admin', 'user'
 
   @override
   void initState() {
@@ -36,10 +37,24 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   List<User> get _filteredUsers {
-    if (_searchQuery.isEmpty) return _users;
+    final query = _searchQuery.trim().toLowerCase();
+    final queryFiltered = query.isEmpty
+        ? _users
+        : _users.where((user) {
+            // Pesquisa por nome, email ou id
+            final id = user.id.toLowerCase();
+            final name = user.name.toLowerCase();
+            final email = user.email.toLowerCase();
+            return id.contains(query) || name.contains(query) || email.contains(query);
+          }).toList();
 
-    return _users.where((user) {
-      return user.name.toLowerCase().contains(_searchQuery.toLowerCase()) || user.email.toLowerCase().contains(_searchQuery.toLowerCase());
+    if (_roleFilter == 'all') return queryFiltered;
+
+    return queryFiltered.where((user) {
+      final roleName = user.role.name.toLowerCase();
+      if (_roleFilter == 'admin') return roleName == 'admin';
+      if (_roleFilter == 'user') return roleName == 'user';
+      return true;
     }).toList();
   }
 
@@ -160,78 +175,142 @@ class _AdminScreenState extends State<AdminScreen> {
     final currentUser = authProvider.user;
 
     return Scaffold(
-      appBar: AppBar(automaticallyImplyLeading: false, title: const Text('Gerenciamento de Usuários')),
-      body: Column(
-        children: [
-          // Admin Header - Non-fixed, placed inside body
-          AdminHeader(user: currentUser),
-          // Search Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.surface,
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar usuário por nome ou email...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.background,
-              ),
-              onChanged: (value) {
-                setState(() => _searchQuery = value);
-              },
-            ),
-          ),
+      appBar: AppBar(title: const Text('Painel Admin')),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 800;
 
-          // Stats Cards
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(child: _buildStatCard(context, 'Total de Usuários', _users.length.toString(), Icons.people, Colors.blue)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildStatCard(context, 'Filtrados', _filteredUsers.length.toString(), Icons.filter_list, Colors.green)),
-              ],
-            ),
-          ),
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Admin Header - Non-fixed, placed inside body
+                    AdminHeader(user: currentUser),
 
-          // Users List
-          Expanded(
-            child:
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _filteredUsers.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(_searchQuery.isEmpty ? Icons.people_outline : Icons.search_off, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          Text(
-                            _searchQuery.isEmpty ? 'Nenhum usuário cadastrado' : 'Nenhum usuário encontrado',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _searchQuery.isEmpty ? 'Adicione seu primeiro usuário' : 'Tente outro termo de busca',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    )
-                    : RefreshIndicator(
-                      onRefresh: _loadUsers,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _filteredUsers.length,
-                        itemBuilder: (context, index) {
-                          final user = _filteredUsers[index];
-                          return _buildUserCard(user);
+                    // Search Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Buscar usuário por nome, email ou id...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                        ),
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
                         },
                       ),
                     ),
-          ),
-        ],
+
+                    // Inline Filter Chips (Todos / Admin / Usuários)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('Todos'),
+                            selected: _roleFilter == 'all',
+                            onSelected: (_) => setState(() => _roleFilter = 'all'),
+                          ),
+                          ChoiceChip(
+                            label: const Text('Administradores'),
+                            selected: _roleFilter == 'admin',
+                            onSelected: (_) => setState(() => _roleFilter = 'admin'),
+                          ),
+                          ChoiceChip(
+                            label: const Text('Usuários'),
+                            selected: _roleFilter == 'user',
+                            onSelected: (_) => setState(() => _roleFilter = 'user'),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Stats Cards (Row on wide, Grid on small)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: isWide
+                          ? SizedBox(
+                              height: 96,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(child: _buildStatCard(context, 'Total de Usuários', _users.length.toString(), Icons.people, Colors.blue)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildStatCard(context, 'Filtrados', _filteredUsers.length.toString(), Icons.filter_list, Colors.green)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildStatCard(context, 'Admins', _users.where((u) => u.role.name.toLowerCase() == 'admin').length.toString(), Icons.admin_panel_settings, Colors.purple)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildStatCard(context, 'Usuários', _users.where((u) => u.role.name.toLowerCase() == 'user').length.toString(), Icons.person, Colors.orange)),
+                                ],
+                              ),
+                            )
+                          : GridView.count(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 3,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                                _buildStatCard(context, 'Total de Usuários', _users.length.toString(), Icons.people, Colors.blue),
+                                _buildStatCard(context, 'Filtrados', _filteredUsers.length.toString(), Icons.filter_list, Colors.green),
+                                _buildStatCard(context, 'Admins', _users.where((u) => u.role.name.toLowerCase() == 'admin').length.toString(), Icons.admin_panel_settings, Colors.purple),
+                                _buildStatCard(context, 'Usuários', _users.where((u) => u.role.name.toLowerCase() == 'user').length.toString(), Icons.person, Colors.orange),
+                              ],
+                            ),
+                    ),
+
+                    // Users List
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child:
+                            _isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : _filteredUsers.isEmpty
+                                ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(_searchQuery.isEmpty ? Icons.people_outline : Icons.search_off, size: 64, color: Colors.grey),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _searchQuery.isEmpty ? 'Nenhum usuário cadastrado' : 'Nenhum usuário encontrado',
+                                        style: Theme.of(context).textTheme.titleMedium,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _searchQuery.isEmpty ? 'Adicione seu primeiro usuário' : 'Tente outro termo de busca',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                : RefreshIndicator(
+                                  onRefresh: _loadUsers,
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    itemCount: _filteredUsers.length,
+                                    itemBuilder: (context, index) {
+                                      final user = _filteredUsers[index];
+                                      return _buildUserCard(user);
+                                    },
+                                  ),
+                                ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showUserDialog(),
@@ -267,81 +346,112 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildUserCard(User user) {
+    final roleLower = user.role.name.toLowerCase();
+    Color chipColor;
+    if (roleLower == 'admin') {
+      chipColor = Colors.purple;
+    } else if (roleLower == 'user') {
+      chipColor = Colors.orange;
+    } else {
+      chipColor = Colors.blueGrey;
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 28,
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          backgroundImage: user.photo != null ? NetworkImage(user.photo!) : null,
-          child:
-              user.photo == null
-                  ? Text(
-                    user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                  )
-                  : null,
-        ),
-        title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
           children: [
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.email, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(child: Text(user.email, style: const TextStyle(fontSize: 13))),
-              ],
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundImage: user.photo != null ? NetworkImage(user.photo!) : null,
+              child:
+                  user.photo == null
+                      ? Text(
+                        user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                      )
+                      : null,
             ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-              child: Text(
-                user.role.name.toUpperCase(),
-                style: TextStyle(fontSize: 11, color: Colors.blue[700], fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            switch (value) {
-              case 'edit':
-                _showUserDialog(user: user);
-                break;
-              case 'reset':
-                _resetPassword(user);
-                break;
-              case 'delete':
-                _deleteUser(user);
-                break;
-            }
-          },
-          itemBuilder:
-              (context) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 12), Text('Editar')])),
-                const PopupMenuItem(
-                  value: 'reset',
-                  child: Row(children: [Icon(Icons.lock_reset, size: 20), SizedBox(width: 12), Text('Redefinir Senha')]),
-                ),
-                const PopupMenuDivider(),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 6),
+                  Row(
                     children: [
-                      Icon(Icons.delete, size: 20, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Excluir', style: TextStyle(color: Colors.red)),
+                      const Icon(Icons.email, size: 14, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text(user.email, style: const TextStyle(fontSize: 13, color: Color.fromARGB(221, 255, 255, 255)))),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: chipColor.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                        child: Text(
+                          user.role.name.toUpperCase(),
+                          style: TextStyle(fontSize: 12, color: chipColor.withOpacity(0.9), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      if (user.id.isNotEmpty) Chip(label: Text('ID: ${user.id}')),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                switch (value) {
+                  case 'edit':
+                    _showUserDialog(user: user);
+                    break;
+                  case 'reset':
+                    _resetPassword(user);
+                    break;
+                  case 'delete':
+                    _deleteUser(user);
+                    break;
+                }
+              },
+              itemBuilder:
+                  (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 12), Text('Editar')]),
+                    ),
+                    const PopupMenuItem(
+                      value: 'reset',
+                      child: Row(children: [Icon(Icons.lock_reset, size: 20), SizedBox(width: 12), Text('Redefinir Senha')]),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Excluir', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+            ),
+          ],
         ),
       ),
     );
   }
+
+  // filter drawer removed; method intentionally deleted
 }

@@ -8,12 +8,7 @@ class ImageUploadWidget extends StatefulWidget {
   final Function(String) onImageSelected;
   final double size;
 
-  const ImageUploadWidget({
-    super.key,
-    this.imageUrl,
-    required this.onImageSelected,
-    this.size = 120,
-  });
+  const ImageUploadWidget({super.key, this.imageUrl, required this.onImageSelected, this.size = 120});
 
   @override
   State<ImageUploadWidget> createState() => _ImageUploadWidgetState();
@@ -24,12 +19,7 @@ class _ImageUploadWidgetState extends State<ImageUploadWidget> {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 1200,
-        imageQuality: 85,
-      );
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 800, maxHeight: 1200, imageQuality: 85);
 
       if (image != null) {
         // Convert to base64 for storage
@@ -51,58 +41,41 @@ class _ImageUploadWidgetState extends State<ImageUploadWidget> {
         height: widget.size * 1.5, // 2:3 aspect ratio
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary,
-            width: 2,
-          ),
+          border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
           color: Theme.of(context).colorScheme.surface,
         ),
-        child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: _buildImage(widget.imageUrl!),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate,
-                    size: 40,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Adicionar\nImagem',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+        child:
+            widget.imageUrl != null && widget.imageUrl!.isNotEmpty
+                ? ClipRRect(borderRadius: BorderRadius.circular(10), child: _buildImage(widget.imageUrl!))
+                : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 8),
+                    Text('Adicionar\nImagem', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
       ),
     );
   }
 
   Widget _buildImage(String imageUrl) {
     if (imageUrl.startsWith('data:')) {
-      return Image.memory(
-        Uri.parse(imageUrl).data!.contentAsBytes(),
-        fit: BoxFit.cover,
-      );
+      try {
+        final comma = imageUrl.indexOf(',');
+        if (comma != -1) {
+          final data = imageUrl.substring(comma + 1);
+          final bytes = base64Decode(data);
+          return Image.memory(bytes, fit: BoxFit.cover);
+        }
+      } catch (_) {}
+      return Container(color: Colors.grey[800]);
     } else if (imageUrl.startsWith('/') || imageUrl.contains('\\')) {
-      return Image.file(
-        File(imageUrl),
-        fit: BoxFit.cover,
-      );
+      return Image.file(File(imageUrl), fit: BoxFit.cover);
     } else if (imageUrl.startsWith('assets/')) {
-      return Image.asset(
-        imageUrl,
-        fit: BoxFit.cover,
-      );
+      return Image.asset(imageUrl, fit: BoxFit.cover);
     } else {
-      return Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-      );
+      return Image.network(imageUrl, fit: BoxFit.cover);
     }
   }
 }

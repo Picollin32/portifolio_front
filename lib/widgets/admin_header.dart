@@ -11,23 +11,25 @@ class AdminHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.6)),
       ),
       child: Row(
         children: [
           // User Avatar
           CircleAvatar(
-            radius: 20,
+            radius: 24,
             backgroundColor: Theme.of(context).colorScheme.primary,
             backgroundImage: user?.photo != null ? NetworkImage(user!.photo!) : null,
             child:
                 user?.photo == null
                     ? Text(
                       user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'A',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                     )
                     : null,
           ),
@@ -41,7 +43,7 @@ class AdminHeader extends StatelessWidget {
               children: [
                 Text(
                   user?.name ?? 'Administrador',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
@@ -50,7 +52,7 @@ class AdminHeader extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -62,7 +64,7 @@ class AdminHeader extends StatelessWidget {
                     Expanded(
                       child: Text(
                         user?.email ?? '',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -76,7 +78,7 @@ class AdminHeader extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Portfolio Button
+              // Portfolio Button (subtle)
               IconButton(
                 icon: const Icon(Icons.home_outlined),
                 tooltip: 'Ir para Portfólio',
@@ -86,17 +88,21 @@ class AdminHeader extends StatelessWidget {
               ),
 
               // Divider
-              Container(width: 1, height: 24, color: Theme.of(context).dividerColor, margin: const EdgeInsets.symmetric(horizontal: 4)),
+              Container(
+                width: 1,
+                height: 28,
+                color: Theme.of(context).dividerColor.withOpacity(0.6),
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+              ),
 
-              // Logout Button
-              ElevatedButton.icon(
+              // Logout Button (outlined)
+              OutlinedButton.icon(
                 onPressed: () => _handleLogout(context),
-                icon: const Icon(Icons.logout, size: 18),
-                label: const Text('Sair'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                icon: const Icon(Icons.logout, size: 18, color: Colors.red),
+                label: const Text('Sair', style: TextStyle(color: Colors.red)),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.red.withOpacity(0.2)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
               ),
             ],
