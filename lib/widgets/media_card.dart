@@ -6,32 +6,24 @@ class MediaCard extends StatelessWidget {
   final MediaItem item;
   final bool showGenre;
   final double width;
+  final VoidCallback? onTap;
 
-  const MediaCard({
-    super.key,
-    required this.item,
-    this.showGenre = false,
-    this.width = 200,
-  });
+  const MediaCard({super.key, required this.item, this.showGenre = false, this.width = 200, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          item.detailPath,
-          arguments: item.id,
-        );
-      },
+      onTap:
+          onTap ??
+          () {
+            Navigator.pushNamed(context, item.detailPath, arguments: item.id);
+          },
       child: SizedBox(
         width: width,
         child: Card(
           clipBehavior: Clip.antiAlias,
           elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -49,28 +41,13 @@ class MediaCard extends StatelessWidget {
                         top: 4,
                         right: 4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha((0.3 * 255).toInt()),
-                                blurRadius: 4,
-                              ),
-                            ],
+                            boxShadow: [BoxShadow(color: Colors.black.withAlpha((0.3 * 255).toInt()), blurRadius: 4)],
                           ),
-                          child: Text(
-                            item.badge!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: Text(item.badge!, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600)),
                         ),
                       ),
                   ],
@@ -86,10 +63,7 @@ class MediaCard extends StatelessWidget {
                     children: [
                       Text(
                         item.title,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, fontSize: 12),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -101,9 +75,7 @@ class MediaCard extends StatelessWidget {
                           return Icon(
                             index < item.rating ? Icons.star : Icons.star_border,
                             size: 12,
-                            color: index < item.rating
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).iconTheme.color,
+                            color: index < item.rating ? Theme.of(context).colorScheme.primary : Theme.of(context).iconTheme.color,
                           );
                         }),
                       ),
@@ -112,18 +84,14 @@ class MediaCard extends StatelessWidget {
                       if (showGenre && item.genre != null)
                         Text(
                           '${item.typeLabel} • ${item.genre}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontSize: 10,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         )
                       else
                         Text(
                           '${item.typeLabel} • ${item.year ?? ""}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontSize: 10,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -149,38 +117,17 @@ class MediaCard extends StatelessWidget {
       );
     } else if (item.image.startsWith('/') || item.image.contains('\\')) {
       // Handle file system paths
-      return Image.file(
-        File(item.image),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-      );
+      return Image.file(File(item.image), fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholder());
     } else if (item.image.startsWith('assets/')) {
       // Handle asset images
-      return Image.asset(
-        item.image,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-      );
+      return Image.asset(item.image, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholder());
     } else {
       // Handle network images
-      return Image.network(
-        item.image,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-      );
+      return Image.network(item.image, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholder());
     }
   }
 
   Widget _buildPlaceholder() {
-    return Container(
-      color: Colors.grey[800],
-      child: const Center(
-        child: Icon(
-          Icons.image_not_supported,
-          size: 48,
-          color: Colors.grey,
-        ),
-      ),
-    );
+    return Container(color: Colors.grey[800], child: const Center(child: Icon(Icons.image_not_supported, size: 48, color: Colors.grey)));
   }
 }

@@ -6,6 +6,7 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/portfolio_screen.dart';
+import 'screens/admin_screen.dart';
 import 'utils/app_theme.dart';
 
 void main() {
@@ -18,10 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => MediaProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider()), ChangeNotifierProvider(create: (_) => MediaProvider())],
       child: MaterialApp(
         title: 'Meu Portfólio',
         debugShowCheckedModeBanner: false,
@@ -32,7 +30,7 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/portfolio': (context) => const PortfolioScreen(),
-          '/admin': (context) => const AdminPlaceholder(),
+          '/admin': (context) => const AdminScreen(),
           '/jogos': (context) => const CategoryPlaceholder(title: 'Jogos'),
           '/filmes': (context) => const CategoryPlaceholder(title: 'Filmes'),
           '/series': (context) => const CategoryPlaceholder(title: 'Séries'),
@@ -43,45 +41,13 @@ class MyApp extends StatelessWidget {
 }
 
 // Placeholder screens - These will be replaced with full implementations
-class AdminPlaceholder extends StatelessWidget {
-  const AdminPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Admin')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Tela Admin em construção'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                context.read<AuthProvider>().logout();
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-              child: const Text('Sair'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class CategoryPlaceholder extends StatelessWidget {
   final String title;
-  
+
   const CategoryPlaceholder({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text('Tela de $title em construção'),
-      ),
-    );
+    return Scaffold(appBar: AppBar(title: Text(title)), body: Center(child: Text('Tela de $title em construção')));
   }
 }
