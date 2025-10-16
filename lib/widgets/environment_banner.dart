@@ -8,11 +8,7 @@ class EnvironmentBanner extends StatelessWidget {
   final Widget child;
   final bool showDebugInfo;
 
-  const EnvironmentBanner({
-    super.key,
-    required this.child,
-    this.showDebugInfo = false,
-  });
+  const EnvironmentBanner({super.key, required this.child, this.showDebugInfo = false});
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +21,7 @@ class EnvironmentBanner extends StatelessWidget {
       message: Config.environmentName,
       location: BannerLocation.topEnd,
       color: Config.isProduction ? Colors.red : Colors.green,
-      child: Stack(
-        children: [
-          child,
-          if (showDebugInfo) _buildDebugInfo(context),
-        ],
-      ),
+      child: Stack(children: [child, if (showDebugInfo) _buildDebugInfo(context)]),
     );
   }
 
@@ -43,10 +34,7 @@ class EnvironmentBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.black87,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Config.isProduction ? Colors.red : Colors.green,
-            width: 2,
-          ),
+          border: Border.all(color: Config.isProduction ? Colors.red : Colors.green, width: 2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,23 +55,9 @@ class EnvironmentBanner extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(width: 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: Config.isProduction ? Colors.red : Colors.green,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(value, style: TextStyle(color: Config.isProduction ? Colors.red : Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
         ],
       ),
     );

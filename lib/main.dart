@@ -14,7 +14,7 @@ import 'widgets/environment_banner.dart';
 void main() {
   // Imprime informações de configuração
   Config.printConfig();
-  
+
   runApp(const MyApp());
 }
 
@@ -24,10 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => MediaProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider()), ChangeNotifierProvider(create: (_) => MediaProvider())],
       child: EnvironmentBanner(
         // Altere para true se quiser ver o debug info no canto da tela
         showDebugInfo: false,
