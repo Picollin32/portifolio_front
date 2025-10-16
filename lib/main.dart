@@ -8,8 +8,13 @@ import 'screens/register_screen.dart';
 import 'screens/portfolio_screen.dart';
 import 'screens/admin_screen.dart';
 import 'utils/app_theme.dart';
+import 'config/config.dart';
+import 'widgets/environment_banner.dart';
 
 void main() {
+  // Imprime informações de configuração
+  Config.printConfig();
+  
   runApp(const MyApp());
 }
 
@@ -19,22 +24,29 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider()), ChangeNotifierProvider(create: (_) => MediaProvider())],
-      child: MaterialApp(
-        title: 'Meu Portfólio',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        initialRoute: '/',
-        routes: {
-          '/': (context) => const SplashScreen(),
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/portfolio': (context) => const PortfolioScreen(),
-          '/admin': (context) => const AdminScreen(),
-          '/jogos': (context) => const CategoryPlaceholder(title: 'Jogos'),
-          '/filmes': (context) => const CategoryPlaceholder(title: 'Filmes'),
-          '/series': (context) => const CategoryPlaceholder(title: 'Séries'),
-        },
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => MediaProvider()),
+      ],
+      child: EnvironmentBanner(
+        // Altere para true se quiser ver o debug info no canto da tela
+        showDebugInfo: false,
+        child: MaterialApp(
+          title: 'Meu Portfólio',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.darkTheme,
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const SplashScreen(),
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/portfolio': (context) => const PortfolioScreen(),
+            '/admin': (context) => const AdminScreen(),
+            '/jogos': (context) => const CategoryPlaceholder(title: 'Jogos'),
+            '/filmes': (context) => const CategoryPlaceholder(title: 'Filmes'),
+            '/series': (context) => const CategoryPlaceholder(title: 'Séries'),
+          },
+        ),
       ),
     );
   }

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: portifolio-front
+    env: static
+    buildCommand: echo "Build já pronto - usando build/web existente"
+    staticPublishPath: ./build/web
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

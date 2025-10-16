@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/config.dart';
 
 class ApiService {
   // Configuração da URL base da API
-  // Altere para a URL onde seu backend está rodando
-  static const String baseUrl = 'http://localhost:8000';
+  // Usa automaticamente a URL correta baseada no ambiente (dev/prod)
+  static String get baseUrl => Config.apiUrl;
 
   // Headers padrão para requisições
   static Map<String, String> get _headers => {'Content-Type': 'application/json', 'Accept': 'application/json'};

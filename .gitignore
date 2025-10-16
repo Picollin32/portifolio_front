@@ -31,7 +31,7 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+# /build/ - Comentado para permitir commit da pasta build/ para deploy no Render
 
 # Symbolication related
 app.*.symbols
